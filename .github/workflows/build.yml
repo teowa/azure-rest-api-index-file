@@ -1,0 +1,48 @@
+---
+name: "Build Index and Submit Pull Request"
+
+on:
+  schedule:
+    - cron: '0 9 * * 1-5'
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Main Repo
+        uses: actions/checkout@v3
+        with:
+          path: main
+
+      - name: Checkout Specs Repo
+        uses: actions/checkout@v3
+        with:
+          repository: azure/azure-rest-api-specs
+          path: specs
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.20'
+
+      - name: Install Index Tool
+        run: go install github.com/magodo/azure-rest-api-index@latest
+
+      - name: Build Index
+        run:
+          azure-rest-api-index build -o main/index.json specs/specification
+
+      - name: Create Pull Request
+        id: cpr
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.WRITE_PR }}
+          path: main
+
+      - name: Check outputs
+        if: ${{ steps.cpr.outputs.pull-request-number }}
+        run: |
+           echo "Pull Request Number - ${{ steps.cpr.outputs.pull-request-number }}"
+           echo "Pull Request URL - ${{ steps.cpr.outputs.pull-request-url }}" 
