@@ -3,7 +3,7 @@ name: "Build Index and Submit Pull Request"
 
 on:
   schedule:
-    - cron: '0 9 * * 1-5'
+    - cron: '0 2 * * 1-5'
 
   workflow_dispatch:
 
@@ -22,6 +22,12 @@ jobs:
           repository: azure/azure-rest-api-specs
           path: specs
 
+      - name: Checkout Index Tool Repo
+        uses: actions/checkout@v3
+        with:
+          repository: magodo/azure-rest-api-index
+          path: index-tool
+
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
@@ -32,7 +38,13 @@ jobs:
 
       - name: Build Index
         run:
-          azure-rest-api-index build -o main/index.json specs/specification
+          azure-rest-api-index build -o main/index.json -dedup index-tool/dedup.json specs/specification
+
+      - name: Set Pull Request Info
+        id: pr-info
+        run: |
+          echo "spec-commit-sha=$(git --git-dir=specs/.git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "date=$(date +%F)" >> "$GITHUB_OUTPUT"
 
       - name: Create Pull Request
         id: cpr
@@ -40,9 +52,17 @@ jobs:
         with:
           token: ${{ secrets.WRITE_PR }}
           path: main
+          commit-message: "Update index.json"
+          title: "[Auto PR ${{ steps.pr-info.outputs.date }}] Update index.json from ${{ steps.pr-info.outputs.spec-commit-sha }}"
+          branch: "update-index-${{ steps.pr-info.outputs.date }}"
 
       - name: Check outputs
         if: ${{ steps.cpr.outputs.pull-request-number }}
         run: |
            echo "Pull Request Number - ${{ steps.cpr.outputs.pull-request-number }}"
            echo "Pull Request URL - ${{ steps.cpr.outputs.pull-request-url }}" 
+
+      - name: Enable Pull Request Auto Merge
+        run: gh pr merge --merge --auto "${{ steps.cpr.outputs.pull-request-number }}" --delete-branch --repo ${{ github.repository }}
+        env:
+          GH_TOKEN: ${{ secrets.WRITE_PR }}
