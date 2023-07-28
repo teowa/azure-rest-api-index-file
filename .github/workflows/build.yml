@@ -40,6 +40,10 @@ jobs:
         run:
           azure-rest-api-index build -o main/index.json -dedup index-tool/dedup.json specs/specification
 
+      - name: Zip Index
+        run:
+          zip main/index.json.zip main/index.json
+
       - name: Set Pull Request Info
         id: pr-info
         run: |
