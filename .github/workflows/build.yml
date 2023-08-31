@@ -60,7 +60,7 @@ jobs:
           title: "[Auto PR ${{ steps.pr-info.outputs.date }}] Update index.json from ${{ steps.pr-info.outputs.spec-commit-sha }}"
           branch: "update-index-${{ steps.pr-info.outputs.date }}"
           body: |
-            This is an auto-generated pull request to update index.json build by [index tool](https://github.com/magodo/azure-rest-api-index) from https://github.com/Azure/azure-rest-api-specs/commit/${{ steps.pr-info.outputs.spec-commit-sha }}.
+            This is an auto-generated pull request to update index.json build by [index tool](https://github.com/magodo/azure-rest-api-index) from https://github.com/Azure/azure-rest-api-specs/tree/${{ steps.pr-info.outputs.spec-commit-sha }}.
 
       - name: Check outputs
         if: ${{ steps.cpr.outputs.pull-request-number }}
