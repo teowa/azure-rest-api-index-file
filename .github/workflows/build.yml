@@ -22,12 +22,6 @@ jobs:
           repository: azure/azure-rest-api-specs
           path: specs
 
-      - name: Checkout Index Tool Repo
-        uses: actions/checkout@v3
-        with:
-          repository: magodo/azure-rest-api-index
-          path: index-tool
-
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
@@ -38,7 +32,7 @@ jobs:
 
       - name: Build Index
         run:
-          azure-rest-api-index build -o main/index.json -dedup index-tool/dedup.json specs/specification
+          azure-rest-api-index build -o main/index.json specs/specification
 
       - name: Zip Index
         run:
