@@ -36,7 +36,7 @@ jobs:
 
       - name: Zip Index
         run:
-          zip main/index.json.zip main/index.json
+          zip -j main/index.json.zip main/index.json
 
       - name: Set Pull Request Info
         id: pr-info
