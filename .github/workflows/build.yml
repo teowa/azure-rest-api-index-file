@@ -48,7 +48,7 @@ jobs:
         id: cpr
         uses: peter-evans/create-pull-request@v5
         with:
-          token: ${{ secrets.WRITE_PR }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           path: main
           commit-message: "Update index.json"
           title: "[Auto PR ${{ steps.pr-info.outputs.date }}] Update index.json from ${{ steps.pr-info.outputs.spec-commit-sha }}"
@@ -65,4 +65,4 @@ jobs:
       - name: Enable Pull Request Auto Merge
         run: gh pr merge --merge --auto "${{ steps.cpr.outputs.pull-request-number }}" --delete-branch --repo ${{ github.repository }}
         env:
-          GH_TOKEN: ${{ secrets.WRITE_PR }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
