@@ -3,7 +3,7 @@ name: "Build Index and Submit Pull Request"
 
 on:
   schedule:
-    - cron: '0 2 * * 1-5'
+    - cron: '0 2 * * 1,4'
 
   workflow_dispatch:
 
