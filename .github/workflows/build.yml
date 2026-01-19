@@ -49,15 +49,28 @@ jobs:
 
       - name: Create Pull Request
         id: cpr
-        uses: peter-evans/create-pull-request@v5
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          path: main
-          commit-message: "Update index.json"
-          title: "[Auto PR ${{ steps.pr-info.outputs.date }}] Update index.json from ${{ steps.pr-info.outputs.spec-commit-sha }}"
-          branch: "update-index-${{ steps.pr-info.outputs.date }}"
-          body: |
-            This is an auto-generated pull request to update index.json build by [index tool](https://github.com/magodo/azure-rest-api-index) from https://github.com/Azure/azure-rest-api-specs/tree/${{ steps.pr-info.outputs.spec-commit-sha }}.
+        working-directory: main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          
+          BRANCH="update-index-${{ steps.pr-info.outputs.date }}"
+          git checkout -b "$BRANCH"
+          git add index.json index.json.zip
+          git commit -m "Update index.json" || exit 0
+          git push -f origin "$BRANCH"
+          
+          PR_URL=$(gh pr create \
+            --title "[Auto PR ${{ steps.pr-info.outputs.date }}] Update index.json from ${{ steps.pr-info.outputs.spec-commit-sha }}" \
+            --body "This is an auto-generated pull request to update index.json build by [index tool](https://github.com/magodo/azure-rest-api-index) from https://github.com/Azure/azure-rest-api-specs/tree/${{ steps.pr-info.outputs.spec-commit-sha }}." \
+            --base main \
+            --head "$BRANCH")
+          
+          PR_NUMBER=$(echo "$PR_URL" | grep -oP '(?<=/pull/)[0-9]+')
+          echo "pull-request-url=$PR_URL" >> "$GITHUB_OUTPUT"
+          echo "pull-request-number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Check outputs
         if: ${{ steps.cpr.outputs.pull-request-number }}
