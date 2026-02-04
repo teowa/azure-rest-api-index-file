@@ -38,7 +38,8 @@ jobs:
           azure-rest-api-index build -o main/index.json specs/specification
 
       - name: Zip Index
-        run:
+        run: |
+          rm -f main/index.json.zip
           zip -j main/index.json.zip main/index.json
 
       - name: Set Pull Request Info
@@ -79,6 +80,18 @@ jobs:
            echo "Pull Request URL - ${{ steps.cpr.outputs.pull-request-url }}" 
 
       - name: Enable Pull Request Auto Merge
+        if: ${{ steps.cpr.outputs.pull-request-number }}
         run: gh pr merge --merge --auto "${{ steps.cpr.outputs.pull-request-number }}" --delete-branch --repo ${{ github.repository }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Release
+        if: ${{ steps.cpr.outputs.pull-request-number }}
+        run: |
+          TAG="index-${{ steps.pr-info.outputs.date }}"
+          gh release create "$TAG" \
+            main/index.json.zip \
+            --title "Index Update ${{ steps.pr-info.outputs.date }}" \
+            --notes "Azure REST API Index built from specs commit ${{ steps.pr-info.outputs.spec-commit-sha }}"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
