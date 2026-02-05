@@ -1,9 +1,9 @@
 ---
-name: "Build Index and Submit Pull Request"
+name: "Build Index, Submit PR and Create Release"
 
 on:
   schedule:
-    - cron: '0 2 * * 1,4'
+    - cron: '0 2 * * 1'
 
   workflow_dispatch:
 
@@ -45,8 +45,10 @@ jobs:
       - name: Set Pull Request Info
         id: pr-info
         run: |
-          echo "spec-commit-sha=$(git --git-dir=specs/.git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          SPEC_SHA=$(git --git-dir=specs/.git rev-parse HEAD)
+          echo "spec-commit-sha=$SPEC_SHA" >> "$GITHUB_OUTPUT"
           echo "date=$(date +%F)" >> "$GITHUB_OUTPUT"
+          echo "Specs Repo: https://github.com/Azure/azure-rest-api-specs/tree/$SPEC_SHA"
 
       - name: Create Pull Request
         id: cpr
@@ -57,8 +59,7 @@ jobs:
           
           BRANCH="update-index-${{ steps.pr-info.outputs.date }}"
           git checkout -b "$BRANCH"
-          git add index.json index.json.zip
-          git commit -m "Update index.json from ${{ steps.pr-info.outputs.spec-commit-sha }}" || exit 0
+          git commit -m "Update index.json from ${{ steps.pr-info.outputs.spec-commit-sha }}"
           git push -f origin "$BRANCH"
           
           PR_URL=$(gh pr create \
@@ -94,5 +95,14 @@ jobs:
             --repo ${{ github.repository }} \
             --title "Index Update ${{ steps.pr-info.outputs.date }}" \
             --notes "Azure REST API Index built from specs commit ${{ steps.pr-info.outputs.spec-commit-sha }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Cleanup Old Releases
+        if: ${{ steps.cpr.outputs.pull-request-number }}
+        continue-on-error: true
+        run: |
+          gh release list --limit 100 --json tagName,createdAt --jq 'sort_by(.createdAt) | reverse | .[10:] | .[].tagName' |
+            xargs -I {} gh release delete {} --yes --cleanup-tag
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
