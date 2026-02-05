@@ -58,7 +58,7 @@ jobs:
           BRANCH="update-index-${{ steps.pr-info.outputs.date }}"
           git checkout -b "$BRANCH"
           git add index.json index.json.zip
-          git commit -m "Update index.json" || exit 0
+          git commit -m "Update index.json from ${{ steps.pr-info.outputs.spec-commit-sha }}" || exit 0
           git push -f origin "$BRANCH"
           
           PR_URL=$(gh pr create \
@@ -91,6 +91,7 @@ jobs:
           TAG="index-${{ steps.pr-info.outputs.date }}"
           gh release create "$TAG" \
             main/index.json.zip \
+            --repo ${{ github.repository }} \
             --title "Index Update ${{ steps.pr-info.outputs.date }}" \
             --notes "Azure REST API Index built from specs commit ${{ steps.pr-info.outputs.spec-commit-sha }}"
         env:
