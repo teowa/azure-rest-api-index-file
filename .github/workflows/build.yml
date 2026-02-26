@@ -28,7 +28,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.20'
+          go-version: 'stable'
 
       - name: Install Index Tool
         run: go install github.com/magodo/azure-rest-api-index@latest
@@ -59,7 +59,8 @@ jobs:
           
           BRANCH="update-index-${{ steps.pr-info.outputs.date }}"
           git checkout -b "$BRANCH"
-          git commit -m "Update index.json from ${{ steps.pr-info.outputs.spec-commit-sha }}"
+          git add index.json index.json.zip
+          git commit -m "Update index.json from ${{ steps.pr-info.outputs.spec-commit-sha }}" || exit 0
           git push -f origin "$BRANCH"
           
           PR_URL=$(gh pr create \
