@@ -15,18 +15,18 @@ jobs:
       pull-requests: write
     steps:
       - name: Checkout Main Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: main
 
       - name: Checkout Specs Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: azure/azure-rest-api-specs
           path: specs
 
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: 'stable'
 
@@ -35,12 +35,12 @@ jobs:
 
       - name: Build Index
         run:
-          azure-rest-api-index build -o main/index.json specs/specification
+          azure-rest-api-index build -o "$RUNNER_TEMP/index.json" specs/specification
 
       - name: Zip Index
         run: |
           rm -f main/index.json.zip
-          zip -j main/index.json.zip main/index.json
+          zip -j main/index.json.zip "$RUNNER_TEMP/index.json"
 
       - name: Set Pull Request Info
         id: pr-info
@@ -59,13 +59,13 @@ jobs:
           
           BRANCH="update-index-${{ steps.pr-info.outputs.date }}"
           git checkout -b "$BRANCH"
-          git add index.json index.json.zip
-          git commit -m "Update index.json from ${{ steps.pr-info.outputs.spec-commit-sha }}" || exit 0
+          git add index.json.zip
+          git commit -m "Update index.json.zip from ${{ steps.pr-info.outputs.spec-commit-sha }}" || exit 0
           git push -f origin "$BRANCH"
           
           PR_URL=$(gh pr create \
-            --title "[Auto PR ${{ steps.pr-info.outputs.date }}] Update index.json from ${{ steps.pr-info.outputs.spec-commit-sha }}" \
-            --body "This is an auto-generated pull request to update index.json build by [index tool](https://github.com/magodo/azure-rest-api-index) from https://github.com/Azure/azure-rest-api-specs/tree/${{ steps.pr-info.outputs.spec-commit-sha }}." \
+            --title "[Auto PR ${{ steps.pr-info.outputs.date }}] Update index.json.zip from ${{ steps.pr-info.outputs.spec-commit-sha }}" \
+            --body "This is an auto-generated pull request to update the compressed index built by [index tool](https://github.com/magodo/azure-rest-api-index) from https://github.com/Azure/azure-rest-api-specs/tree/${{ steps.pr-info.outputs.spec-commit-sha }}." \
             --base main \
             --head "$BRANCH")
           
@@ -81,9 +81,9 @@ jobs:
            echo "Pull Request Number - ${{ steps.cpr.outputs.pull-request-number }}"
            echo "Pull Request URL - ${{ steps.cpr.outputs.pull-request-url }}" 
 
-      - name: Enable Pull Request Auto Merge
+      - name: Merge Pull Request
         if: ${{ steps.cpr.outputs.pull-request-number }}
-        run: gh pr merge --merge --auto "${{ steps.cpr.outputs.pull-request-number }}" --delete-branch --repo ${{ github.repository }}
+        run: gh pr merge --merge "${{ steps.cpr.outputs.pull-request-number }}" --delete-branch --repo ${{ github.repository }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
