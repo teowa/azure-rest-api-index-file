@@ -98,12 +98,3 @@ jobs:
             --notes "Azure REST API Index built from specs commit ${{ steps.pr-info.outputs.spec-commit-sha }}"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Cleanup Old Releases
-        if: ${{ steps.cpr.outputs.pull-request-number }}
-        continue-on-error: true
-        run: |
-          gh release list --limit 100 --json tagName,createdAt --jq 'sort_by(.createdAt) | reverse | .[10:] | .[].tagName' |
-            xargs -I {} gh release delete {} --yes --cleanup-tag
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
